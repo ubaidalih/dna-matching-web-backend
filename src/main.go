@@ -57,11 +57,30 @@ func main() {
 	// Routes
 	e.GET("/", hello)
 	e.GET("/result", func(c echo.Context) error {
-		//validate search query
-		//parse search query
+		jsonBody := make(map[string]interface{})
+		err := json.NewDecoder(c.Request().Body).Decode(&jsonBody)
+		if err != nil {
+			log.Error("empty json body")
+			return err
+		}
+		query := jsonBody["query"].(string)
+		format := algorithm.ValidateQuery(query)
+		if format == -1 {
+			return c.JSON(http.StatusOK, message{"Format query tidak valid"})
+		}
+		newQuery := algorithm.ParseQuery(query, format)
+		tanggal := newQuery[0]
+		penyakit := newQuery[1]
 		//benerin format tanggal
 		var hasil_prediksi []hasilPrediksi
-		rows, err := db.Query("SELECT * FROM hasil_prediksi")
+		var rows *sql.Rows
+		if tanggal == "" {
+			rows, err = db.Query("SELECT * FROM hasil_prediksi WHERE penyakit = $1", penyakit)
+		} else if penyakit == "" {
+			rows, err = db.Query("SELECT * FROM hasil_prediksi WHERE tanggal = $1", tanggal)
+		} else {
+			rows, err = db.Query("SELECT * FROM hasil_prediksi WHERE tanggal = $1 AND penyakit = $2", tanggal, penyakit)
+		}
 		if err != nil {
 			return err
 		}
@@ -72,7 +91,11 @@ func main() {
 			if err != nil {
 				return err
 			}
+			hasil.Tanggal = hasil.Tanggal[:10]
 			hasil_prediksi = append(hasil_prediksi, *hasil)
+		}
+		if hasil_prediksi == nil {
+			c.JSON(http.StatusOK, message{"Tidak ada history yang cocok"})
 		}
 		return c.JSON(http.StatusOK, hasil_prediksi)
 	})
