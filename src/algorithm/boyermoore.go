@@ -11,7 +11,7 @@ func lastOccurence(s string) map[string]int {
 
 //Boyer Moore Algorithm
 //Return indeks pertama string ditemukan, jika tidak ada return -1
-func boyerMoore(s, t string) int {
+func BoyerMoore(s, t string) int {
 	last := lastOccurence(t)
 	i, j := len(t)-1, len(t)-1
 	for i < len(s) && j < len(t) {

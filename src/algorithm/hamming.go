@@ -1,6 +1,6 @@
 package algorithm
 
-func hammingDistance(s, t string) int {
+func HammingDistance(s, t string) int {
 	count := 0
 	max := 0
 	for i := 0; i+len(t) <= len(s); i++ {

@@ -6,7 +6,7 @@ import (
 	"regexp"
 )
 
-func readFile(filename string) string {
+func ReadFile(filename string) string {
 	data, err := ioutil.ReadFile(fmt.Sprintf(".\\src\\algorithm\\%s", filename))
 	if err != nil {
 		fmt.Println("Error: ", err)
@@ -15,7 +15,7 @@ func readFile(filename string) string {
 	return string(data)
 }
 
-func validateInput(s string) bool {
+func ValidateInput(s string) bool {
 	regex, err := regexp.Compile("^[ACGT]+$")
 	if err != nil {
 		fmt.Println("Error: ", err)
@@ -24,7 +24,7 @@ func validateInput(s string) bool {
 	return regex.MatchString(s)
 }
 
-func validateQuery(s string) bool {
+func ValidateQuery(s string) bool {
 	regex1, err := regexp.Compile(`^(31(\/|-|\.|\s)(0[13578]|1[02]|(Januari|Maret|Mei|Juli|Agustus|Oktober|Desember))(\/|-|\.|\s)((1[6-9]|[2-9]\d)\d{2}))(\s)(.*)$`)
 	if err != nil {
 		fmt.Println("Error: ", err)
