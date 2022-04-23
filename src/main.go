@@ -121,11 +121,35 @@ func main() {
 				status = "False"
 			}
 		}
-		db.Query("INSERT INTO hasil_prediksi (nama_pasien, tanggal, penyakit, status, presentase) VALUES ($1, $2, $3, $4, $5)", nama, tanggal, penyakit, status, persentase)
+		db.Query("INSERT INTO hasil_prediksi (nama_pasien, tanggal, penyakit, status, persentase) VALUES ($1, $2, $3, $4, $5)", nama, tanggal, penyakit, status, persentase)
 
 		return c.JSON(http.StatusOK, hasilPrediksi{0, nama, tanggal, penyakit, status, persentase})
 	})
-	// e.POST("/disease", insertDisease)
+	e.POST("/disease", func(c echo.Context) error {
+		jsonBody := make(map[string]interface{})
+		err := json.NewDecoder(c.Request().Body).Decode(&jsonBody)
+		if err != nil {
+			log.Error("empty json body")
+			return err
+		}
+		penyakit := jsonBody["penyakit"].(string)
+		dna := jsonBody["dna"].(string)
+
+		if !algorithm.ValidateInput(dna) {
+			return c.JSON(http.StatusOK, message{"DNA tidak valid"})
+		}
+
+		var nama string
+		err = db.QueryRow("SELECT nama_penyakit FROM penyakit WHERE nama_penyakit = $1", penyakit).Scan(&nama)
+		if err == sql.ErrNoRows {
+			db.Query("INSERT INTO penyakit (nama_penyakit, rantai_dna) VALUES ($1, $2)", penyakit, dna)
+			return c.JSON(http.StatusOK, message{"Penyakit berhasil ditambahkan"})
+		} else if err != nil {
+			return err
+		} else {
+			return c.JSON(http.StatusOK, message{"Penyakit sudah ada"})
+		}
+	})
 
 	// Start server
 	e.Logger.Fatal(e.Start(":1323"))
