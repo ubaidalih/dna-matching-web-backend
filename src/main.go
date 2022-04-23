@@ -2,12 +2,16 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/gommon/log"
 	_ "github.com/lib/pq"
+	"github.com/ubaidalih/Tubes3_13520061/algorithm"
 )
 
 type hasilPrediksi struct {
@@ -16,13 +20,17 @@ type hasilPrediksi struct {
 	Tanggal    string `json:"tanggal"`
 	Penyakit   string `json:"penyakit"`
 	Status     string `json:"status"`
-	Presentase int    `json:"presentase"`
+	Persentase int    `json:"persentase"`
 }
 
 type penyakit struct {
 	Id       int    `json:"id"`
 	Penyakit string `json:"penyakit"`
 	DNA      string `json:"dna"`
+}
+
+type message struct {
+	Message string `json:"message"`
 }
 
 func main() {
@@ -60,7 +68,7 @@ func main() {
 		defer rows.Close()
 		for rows.Next() {
 			hasil := new(hasilPrediksi)
-			err := rows.Scan(&hasil.Id, &hasil.Nama, &hasil.Tanggal, &hasil.Penyakit, &hasil.Status, &hasil.Presentase)
+			err := rows.Scan(&hasil.Id, &hasil.Nama, &hasil.Tanggal, &hasil.Penyakit, &hasil.Status, &hasil.Persentase)
 			if err != nil {
 				return err
 			}
@@ -70,7 +78,53 @@ func main() {
 	})
 	// e.POST("/result", insertQuery)
 	// e.GET("/test", testResult)
-	// e.POST("/test", insertTest)
+	e.POST("/test", func(c echo.Context) error {
+		jsonBody := make(map[string]interface{})
+		err := json.NewDecoder(c.Request().Body).Decode(&jsonBody)
+		if err != nil {
+			log.Error("empty json body")
+			return err
+		}
+		nama := jsonBody["nama"].(string)
+		dna := jsonBody["dna"].(string)
+		penyakit := jsonBody["penyakit"].(string)
+		var status string
+		var persentase int
+		curTime := time.Now()
+		tanggal := curTime.Format("2006-01-02")
+
+		if !algorithm.ValidateInput(dna) {
+			return c.JSON(http.StatusOK, message{"DNA tidak valid"})
+		}
+
+		rows, err := db.Query("SELECT rantai_dna FROM penyakit WHERE nama_penyakit = $1", penyakit)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		var dna_penyakit string
+		rows.Next()
+		err = rows.Scan(&dna_penyakit)
+		if err != nil {
+			return c.JSON(http.StatusOK, message{"Penyakit tidak ditemukan"})
+		}
+
+		if algorithm.KMP(dna, dna_penyakit) != -1 {
+			status = "True"
+			persentase = 100
+		} else {
+			persentase = algorithm.HammingDistance(dna, dna_penyakit)
+			if persentase >= 80 {
+				status = "True"
+			} else {
+				status = "False"
+			}
+		}
+		db.Query("INSERT INTO hasil_prediksi (nama_pasien, tanggal, penyakit, status, presentase) VALUES ($1, $2, $3, $4, $5)", nama, tanggal, penyakit, status, persentase)
+
+		return c.JSON(http.StatusOK, hasilPrediksi{0, nama, tanggal, penyakit, status, persentase})
+	})
 	// e.POST("/disease", insertDisease)
 
 	// Start server
