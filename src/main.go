@@ -53,10 +53,14 @@ func main() {
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"http://localhost:3000"},
+		// AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+	}))
 
 	// Routes
 	e.GET("/", hello)
-	e.GET("/result", func(c echo.Context) error {
+	e.POST("/result", func(c echo.Context) error {
 		jsonBody := make(map[string]interface{})
 		err := json.NewDecoder(c.Request().Body).Decode(&jsonBody)
 		if err != nil {
@@ -95,7 +99,7 @@ func main() {
 			hasil_prediksi = append(hasil_prediksi, *hasil)
 		}
 		if hasil_prediksi == nil {
-			c.JSON(http.StatusOK, message{"Tidak ada history yang cocok"})
+			return c.JSON(http.StatusOK, message{"Tidak ada history yang cocok"})
 		}
 		return c.JSON(http.StatusOK, hasil_prediksi)
 	})
