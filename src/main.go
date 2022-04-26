@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -180,8 +179,9 @@ func main() {
 	})
 
 	// Start server
-	port, _ := os.LookupEnv("PORT")
-	e.Logger.Fatal(e.Start(":" + port))
+	// port, _ := os.LookupEnv("PORT")
+	// e.Logger.Fatal(e.Start(":" + port))
+	e.Logger.Fatal(e.Start(":1323"))
 }
 
 // Handler
