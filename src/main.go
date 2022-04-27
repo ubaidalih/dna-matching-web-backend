@@ -113,6 +113,7 @@ func main() {
 		nama := jsonBody["nama"].(string)
 		dna := jsonBody["dna"].(string)
 		penyakit := jsonBody["penyakit"].(string)
+		algo := jsonBody["algo"].(string)
 		var status string
 		var persentase int
 		curTime := time.Now()
@@ -135,15 +136,29 @@ func main() {
 			return c.JSON(http.StatusPartialContent, message{"Penyakit tidak ditemukan"})
 		}
 
-		if algorithm.KMP(dna, dna_penyakit) != -1 {
-			status = "True"
-			persentase = 100
-		} else {
-			persentase = algorithm.HammingDistance(dna, dna_penyakit)
-			if persentase >= 80 {
+		if algo == "true" {
+			if algorithm.KMP(dna, dna_penyakit) != -1 {
 				status = "True"
+				persentase = 100
 			} else {
-				status = "False"
+				persentase = algorithm.HammingDistance(dna, dna_penyakit)
+				if persentase >= 80 {
+					status = "True"
+				} else {
+					status = "False"
+				}
+			}
+		} else {
+			if algorithm.BoyerMoore(dna, dna_penyakit) != -1 {
+				status = "True"
+				persentase = 100
+			} else {
+				persentase = algorithm.HammingDistance(dna, dna_penyakit)
+				if persentase >= 80 {
+					status = "True"
+				} else {
+					status = "False"
+				}
 			}
 		}
 		db.Query("INSERT INTO hasil_prediksi (nama_pasien, tanggal, penyakit, status, persentase) VALUES ($1, $2, $3, $4, $5)", nama, tanggal, penyakit, status, persentase)
