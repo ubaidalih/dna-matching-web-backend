@@ -54,8 +54,8 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"http://localhost:3000"},
-		// AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+		AllowOrigins: []string{"*"},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
 
 	// Routes
@@ -70,7 +70,7 @@ func main() {
 		query := jsonBody["query"].(string)
 		format := algorithm.ValidateQuery(query)
 		if format == -1 {
-			return c.JSON(http.StatusOK, message{"Format query tidak valid"})
+			return c.JSON(http.StatusPartialContent, message{"Format query tidak valid"})
 		}
 		newQuery := algorithm.ParseQuery(query, format)
 		tanggal := newQuery[0]
@@ -99,12 +99,10 @@ func main() {
 			hasil_prediksi = append(hasil_prediksi, *hasil)
 		}
 		if hasil_prediksi == nil {
-			return c.JSON(http.StatusOK, message{"Tidak ada history yang cocok"})
+			return c.JSON(http.StatusPartialContent, message{"Tidak ada history yang cocok"})
 		}
 		return c.JSON(http.StatusOK, hasil_prediksi)
 	})
-	// e.POST("/result", insertQuery)
-	// e.GET("/test", testResult)
 	e.POST("/test", func(c echo.Context) error {
 		jsonBody := make(map[string]interface{})
 		err := json.NewDecoder(c.Request().Body).Decode(&jsonBody)
@@ -121,7 +119,7 @@ func main() {
 		tanggal := curTime.Format("2006-01-02")
 
 		if !algorithm.ValidateInput(dna) {
-			return c.JSON(http.StatusOK, message{"DNA tidak valid"})
+			return c.JSON(http.StatusPartialContent, message{"DNA tidak valid"})
 		}
 
 		rows, err := db.Query("SELECT rantai_dna FROM penyakit WHERE nama_penyakit = $1", penyakit)
@@ -134,7 +132,7 @@ func main() {
 		rows.Next()
 		err = rows.Scan(&dna_penyakit)
 		if err != nil {
-			return c.JSON(http.StatusOK, message{"Penyakit tidak ditemukan"})
+			return c.JSON(http.StatusPartialContent, message{"Penyakit tidak ditemukan"})
 		}
 
 		if algorithm.KMP(dna, dna_penyakit) != -1 {
